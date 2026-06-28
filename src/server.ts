@@ -29,7 +29,22 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   if (!body.includes('"unhandled":true') || !body.includes('"message":"HTTPError"')) {
     return response;
   }
+export default {
+  async fetch(request: Request, env: unknown, ctx: unknown) {
 
+    if (!(globalThis as any).process) {
+      (globalThis as any).process = { env: {} };
+    }
+
+    Object.assign(
+      (globalThis as any).process.env,
+      env
+    );
+
+    const handler = await getServerEntry();
+    return handler.fetch(request, env, ctx);
+  },
+};
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
   return new Response(renderErrorPage(), {
     status: 500,
